@@ -2,6 +2,7 @@
 <head>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/dark.css">
     <script src="swipe.js"></script>
+    <script src="server.js"></script>
 </head>
 <body>
     <h1>
@@ -10,9 +11,11 @@
     <h2 id="table-file-name">Welcome to Vibin Bar! </h2>    
 
     <h2 id="table-file-name1">Please swipe your ID </h2>   
-    <h2 id="nameMessage"></h2>
-    <h1 id="table-file-name"> </h1>   
 
+    <h2 id="nameMessage"></h2>
+    <h2 id ="legalage"></h2>
+    <h1 id="table-file-name"> </h1>   
+<div id="drinkMenu" style="display:none">
     <label for="DrinkSelect">What would you like to drink?</label>
   <select name="Drinks" id="Drinks">
     <option value="Cocktail">Cocktail</option>
@@ -20,5 +23,6 @@
     <option value="Beer">Beer</option>
     <option value="Special Order">Special Order</option>
   </select>
+</div>
 </body>
 </html>

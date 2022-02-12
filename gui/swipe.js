@@ -57,7 +57,7 @@ function  registerKeyStrokes(event) {
              console.log(day)
              let legalDate = [2001,2,12]
              isLegal(year,month,day)
-            
+             
 
           }
         }
@@ -66,7 +66,21 @@ function  registerKeyStrokes(event) {
             return string.charAt(0).toUpperCase() + string.slice(1);
           }  
         function isLegal(year,month,day){
-           days = (year*365)+
+            year = 2022-year
+           let days = (year*365)+(month*30.4)+(day)
+           if(days >= 7670)
+           {
+               console.log("You are of legal age")
+               document.getElementById("legalage").innerText = "You are of legal age!"
+               document.getElementById("drinkMenu").style = "display: block"
+
+           }
+           else
+           {
+               console.log("You are not of legal age")
+               document.getElementById("legalage").innerText = "You are not of legal age :("
+               document.getElementById("drinkMenu").style = "display: none"
+           }
         }
         function convertDate(date){
             date = date.slice(1)
