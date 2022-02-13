@@ -78,3 +78,16 @@
 		transform: translate(50%, 0);
 	}
 }
+
+.row {
+    display: flex;
+    bottom:175px;
+    position: absolute;
+  }
+  
+  .column {
+    flex: 50%;
+  }
+  #container {
+    /* position: relative; */
+}
