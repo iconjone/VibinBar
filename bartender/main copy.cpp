@@ -7,7 +7,6 @@
 #include <Adafruit_SSD1306.h>
 
 #include <ESPAsyncWebServer.h>
-#include <ESPAsyncTCP.h>
 
 #include <ArduinoJson.h>
 
@@ -102,23 +101,28 @@ void testscrolltext(void) {
 }
 
 void displayText(String text){
-  Serial.print("GOT HERE");
-  // yield();
+  yield();
   delay(200);
   display.clearDisplay();
+  Serial.println("1");
   display.setTextSize(1);             // Normal 1:1 pixel scale
+  Serial.println("2");
 
   display.setTextColor(SSD1306_WHITE);        // Draw white text
+  Serial.println("3");
 
   display.setCursor(0,0);             // Start at top-left corner
+  Serial.println("4");
 
   display.println(text.c_str());
+  Serial.println("5");
   delay(200);
-  // yield();
+  yield();
   display.display();
-    // yield();
+    yield();
   delay(200);
 
+  Serial.println("6");
 
 }
 
@@ -181,24 +185,8 @@ void displayText(String text){
             //concatenate the name and drink
             String patron = name + " - " + drink;
             Serial.println(patron);
-           
-
-
+            WiFi.disconnect();
             displayText(patron);
-
-          }
-          
-          if(strcmp(TYPE, "cupUpdate") == 0){
-            
-          DynamicJsonDocument old(64);  
-          String state = "";
-              old["TYPE"] = "cupUpdate";
-          old["CUP"] = doc["CUP"];
-          old["ANALOG"] = doc["ANALOG"];
-          state = "";
-          serializeJson(old, state);
-          ws.textAll(state);
-
           }
 
           // if (strcmp(TYPE, "IL") == 0)
@@ -272,7 +260,6 @@ void displayText(String text){
 
 void setup() {
   Serial.begin(115200);
-  Serial.setDebugOutput(true);
 
   // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
   if(!display.begin(SSD1306_SWITCHCAPVCC)) {
@@ -296,6 +283,7 @@ void setup() {
   display.display();
   delay(2000);
   displayText("Attempting to connect to WiFi");
+  displayText("James Brackmann - Beer");
 
 
   WiFi.begin(ssid);             // Connect to the network
