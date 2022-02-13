@@ -13,15 +13,48 @@
 int WATER_LEVEL = A0;
 int BUTTON1 = D1;
 int BUTTON2 = D2;
-const char* ssid     = "VibinBar";         // The SSID (name) of the Wi-Fi network you want to connect to
 
-const char* websockets_server = "ws://192.168.179.51:80/ws"; //server adress and port
+int RED_LED = D8;   
+int GREEN_LED = D7; 
+int BLUE_LED = D6;  
+const char* ssid     = "VibinBar";         // The SSID (name) of the Wi-Fi network you want to connect to
+const char* password = "vibinbar";         // The password of the Wi-Fi network
+String cup = "B";
+
+void lightControl(int hex)
+{
+  analogWrite(RED_LED, (hex >> 16) * 4);
+  analogWrite(GREEN_LED, ((hex >> 8) & 0xFF) * 4);
+  analogWrite(BLUE_LED, (hex & 0xFF) * 4);
+}
+
+const char* websockets_server = "ws://192.168.137.30:80/ws"; //server adress and port
 
 using namespace websockets;
 
 void onMessageCallback(WebsocketsMessage message) {
     Serial.print("Got Message: ");
     Serial.println(message.data());
+    int len = message.data().length();
+            StaticJsonDocument<96> doc;
+
+    DeserializationError error = deserializeJson(doc, message.c_str());
+    if (error) {
+        Serial.print(F("deserializeJson() failed: "));
+        Serial.println(error.c_str());
+        return;
+    }
+    const char* TYPE = doc["TYPE"]; 
+    //check if TYPE is equal to "cupMessage"
+    if (strcmp(TYPE, "cupMessage") == 0) {
+        const char* CUP = doc["CUP"];
+        //check if CUP is equal to cup
+        if (strcmp(CUP, cup.c_str()) == 0) {
+           Serial.println("Light up this cup");
+           lightControl(0x00FF00);
+        }
+    }
+
 }
 
 void onEventsCallback(WebsocketsEvent event, String data) {
@@ -143,7 +176,7 @@ void setup() {
   btn2.attachLongPressStart(pressStart2);
   btn2.attachLongPressStop(pressStop2);
 
-WiFi.begin(ssid);
+WiFi.begin(ssid, password);
 
     // Wait some time to connect to wifi
     for(int i = 0; i < 10 && WiFi.status() != WL_CONNECTED; i++) {
@@ -177,10 +210,10 @@ void loop() {
 // Serial.print(" Button2 value: ");
 // Serial.print(buttonVal2);
 // Serial.println("");
-delay(200);
+delay(1000);
 client.poll();
     doc["TYPE"] = "cupUpdate";
-    doc["CUP"] = "A";
+    doc["CUP"] = cup;
     doc["ANALOG"] = analogValue;
     state = "";
     serializeJson(doc, state);

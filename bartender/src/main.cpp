@@ -30,6 +30,7 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT,
 #define LOGO_WIDTH    16
 
 const char* ssid     = "VibinBar";         // The SSID (name) of the Wi-Fi network you want to connect to
+const char* password = "vibinbar";         // The password of the Wi-Fi network
 AsyncWebServer httpServer(80);
 
 AsyncWebSocket ws("/ws");
@@ -162,13 +163,13 @@ void displayText(String text){
       }
       if (info->opcode == WS_TEXT)
       {
-        StaticJsonDocument<48> doc;
+        StaticJsonDocument<64> doc;
 
         DeserializationError error = deserializeJson(doc, (char *)data, len);
 
         if (error)
         {
-          client->text("{\"status\": false}");
+          client->text("{\"status\": false, \"TYPE\":\"status\"}");
         }
         else
         {
@@ -180,28 +181,37 @@ void displayText(String text){
             String drink = doc["DRINK"];
             String cup = doc["CUP"];
             //concatenate the name and drink
-            String patron = name + " - " + drink;
-            Serial.println(patron);
+            String patron = name + " - " + drink + " - " + cup;
+            // Serial.println(patron);
            
-            display.clearDisplay();
-            display.setTextSize(1);             // Normal 1:1 pixel scale
+            // display.clearDisplay();
+            // display.setTextSize(1);             // Normal 1:1 pixel scale
 
-            display.setTextColor(SSD1306_WHITE);        // Draw white text
+            // display.setTextColor(SSD1306_WHITE);        // Draw white text
 
-            display.setCursor(0,0);             // Start at top-left corner
+            // display.setCursor(0,0);             // Start at top-left corner
 
-            display.println(name.c_str());
-            display.setCursor(1,0);             // Start at mid-left corner
-            display.println(drink.c_str());
-            display.setCursor(2,0);             // Start at bottom-left corner
-            String cupString = "Cup: " + cup;
-            display.println(cupString.c_str());
-
-
-
-            // displayText(patron);
+            // display.println(name.c_str());
+            // display.setCursor(1,0);             // Start at mid-left corner
+            // display.println(drink.c_str());
+            // display.setCursor(2,0);             // Start at bottom-left corner
+            // String cupString = "Cup: " + cup;
+            // display.println(cupString.c_str());
+            // display.display();      // Show text
 
 
+            displayText(patron);
+
+          ws.textAll("{\"TYPE\": \"cupMessage\", \"CUP\": \"" + cup + "\"}");
+          }
+          else if(strcmp(TYPE, "newDrink") == 0){
+            Serial.println("New Drink");
+            String name = doc["NAME"];
+            String drink = doc["DRINK"];
+            String cup = doc["CUP"];
+            //concatenate the name and drink
+            String patron = name + " - " + drink + " - " + cup;
+            // Serial.
           }
           
           if(strcmp(TYPE, "cupUpdate") == 0){
@@ -235,7 +245,7 @@ void displayText(String text){
           //   lightControl(LEDValue);
           // }
 
-          client->text("{\"status\": true}"); //needs to have some kind fo check /timer that if you don't get a command from (ping pong) to auto turn off
+          client->text("{\"status\": true, \"TYPE\":\"status\"}"); //needs to have some kind fo check /timer that if you don't get a command from (ping pong) to auto turn off
         }
       }
       else
@@ -288,7 +298,7 @@ void displayText(String text){
 
 void setup() {
   Serial.begin(115200);
-  Serial.setDebugOutput(true);
+  // Serial.setDebugOutput(true);
 
   // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
   if(!display.begin(SSD1306_SWITCHCAPVCC)) {
@@ -314,7 +324,7 @@ void setup() {
   displayText("Attempting to connect to WiFi");
 
 
-  WiFi.begin(ssid);             // Connect to the network
+  WiFi.begin(ssid, password);             // Connect to the network
     int i = 0;
   while (WiFi.status() != WL_CONNECTED) { // Wait for the Wi-Fi to connect
     delay(1000);
@@ -333,7 +343,7 @@ void setup() {
   // unless that's what you want...rather, you can batch up a bunch of
   // drawing operations and then update the screen all at once by calling
   // display.display(). These examples demonstrate both approaches...
-  displayText("Connected to WiFi");
+  displayText("Connected to WiFi      " + WiFi.localIP().toString());
   ws.onEvent(onWsEvent);
 httpServer.addHandler(&ws);
 
