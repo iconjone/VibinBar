@@ -11,78 +11,99 @@
 
 #include <ArduinoJson.h>
 
-
-
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 32 // OLED display height, in pixels
 
-#define OLED_MOSI   D7 //Connect to D1 on OLED
-#define OLED_CLK    D5 //Connect to D0 on OLED 
-#define OLED_DC     D1 //Connect to DC on OLED
-#define OLED_CS     D8 //Connect to CS on OLED
-#define OLED_RESET  D3 //Connect to RES on OLED
+#define OLED_MOSI D7  // Connect to D1 on OLED
+#define OLED_CLK D5   // Connect to D0 on OLED
+#define OLED_DC D1    // Connect to DC on OLED
+#define OLED_CS D8    // Connect to CS on OLED
+#define OLED_RESET D3 // Connect to RES on OLED
 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT,
-  OLED_MOSI, OLED_CLK, OLED_DC, OLED_RESET, OLED_CS);
-#define NUMFLAKES     10 // Number of snowflakes in the animation example
+                         OLED_MOSI, OLED_CLK, OLED_DC, OLED_RESET, OLED_CS);
+#define NUMFLAKES 10 // Number of snowflakes in the animation example
 
-#define LOGO_HEIGHT   16
-#define LOGO_WIDTH    16
+#define LOGO_HEIGHT 16
+#define LOGO_WIDTH 16
 
-const char* ssid     = "VibinBar";         // The SSID (name) of the Wi-Fi network you want to connect to
-const char* password = "vibinbar";         // The password of the Wi-Fi network
+int BUZZER = D2;
+
+const char *ssid = "VibinBar";     // The SSID (name) of the Wi-Fi network you want to connect to
+const char *password = "vibinbar"; // The password of the Wi-Fi network
 AsyncWebServer httpServer(80);
 
 AsyncWebSocket ws("/ws");
 
+int A_Percentage = 0;
+int B_Percentage = 0;
 
+unsigned long statusTime = 0;
 
-void testdrawchar(void) {
+void buzzerNotification()
+{
+  analogWrite(BUZZER, 64);
+  delay(100);
+  analogWrite(BUZZER, 0);
+  delay(100);
+  analogWrite(BUZZER, 64);
+  delay(100);
+  analogWrite(BUZZER, 0);
+}
+
+void testdrawchar(void)
+{
   display.clearDisplay();
 
-  display.setTextSize(1);      // Normal 1:1 pixel scale
+  display.setTextSize(1);              // Normal 1:1 pixel scale
   display.setTextColor(SSD1306_WHITE); // Draw white text
-  display.setCursor(0, 0);     // Start at top-left corner
-  display.cp437(true);         // Use full 256 char 'Code Page 437' font
+  display.setCursor(0, 0);             // Start at top-left corner
+  display.cp437(true);                 // Use full 256 char 'Code Page 437' font
 
   // Not all the characters will fit on the display. This is normal.
   // Library will draw what it can and the rest will be clipped.
-  for(int16_t i=0; i<256; i++) {
-    if(i == '\n') display.write(' ');
-    else          display.write(i);
+  for (int16_t i = 0; i < 256; i++)
+  {
+    if (i == '\n')
+      display.write(' ');
+    else
+      display.write(i);
   }
 
   display.display();
   delay(2000);
 }
 
-void testdrawstyles(void) {
+void testdrawstyles(void)
+{
   display.clearDisplay();
 
-  display.setTextSize(1);             // Normal 1:1 pixel scale
-  display.setTextColor(SSD1306_WHITE);        // Draw white text
-  display.setCursor(0,0);             // Start at top-left corner
+  display.setTextSize(1);              // Normal 1:1 pixel scale
+  display.setTextColor(SSD1306_WHITE); // Draw white text
+  display.setCursor(0, 0);             // Start at top-left corner
   display.println(F("Hello, world!"));
 
   display.setTextColor(SSD1306_BLACK, SSD1306_WHITE); // Draw 'inverse' text
   display.println(3.141592);
 
-  display.setTextSize(2);             // Draw 2X-scale text
+  display.setTextSize(2); // Draw 2X-scale text
   display.setTextColor(SSD1306_WHITE);
-  display.print(F("0x")); display.println(0xDEADBEEF, HEX);
+  display.print(F("0x"));
+  display.println(0xDEADBEEF, HEX);
 
   display.display();
   delay(2000);
 }
 
-void testscrolltext(void) {
+void testscrolltext(void)
+{
   display.clearDisplay();
 
   display.setTextSize(2); // Draw 2X-scale text
   display.setTextColor(SSD1306_WHITE);
   display.setCursor(10, 0);
   display.println(F("scroll"));
-  display.display();      // Show initial text
+  display.display(); // Show initial text
   delay(100);
 
   // Scroll in various directions, pausing in-between:
@@ -101,40 +122,39 @@ void testscrolltext(void) {
   display.stopscroll();
   delay(1000);
 }
-
-void displayText(String text){
+bool statusDisplay = false;
+void displayText(String text)
+{
   Serial.print("GOT HERE");
   // yield();
   delay(200);
   display.clearDisplay();
-  display.setTextSize(1);             // Normal 1:1 pixel scale
+  display.setTextSize(1); // Normal 1:1 pixel scale
 
-  display.setTextColor(SSD1306_WHITE);        // Draw white text
+  display.setTextColor(SSD1306_WHITE); // Draw white text
 
-  display.setCursor(0,0);             // Start at top-left corner
+  display.setCursor(0, 0); // Start at top-left corner
 
   display.println(text.c_str());
   delay(200);
   // yield();
   display.display();
-    // yield();
+  // yield();
   delay(200);
 
-
+  statusTime = millis();
+  statusDisplay = true;
 }
 
-
-
-  
-  void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len)
+void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len)
 {
-  //About 160 messages can be sent before it dies
-  //Take data and put it in JSON
+  // About 160 messages can be sent before it dies
+  // Take data and put it in JSON
   if (type == WS_EVT_CONNECT)
   {
 
     Serial.println("Websocket client connection received");
-    client->text("Hello from Vibin"); //Don't really need a hello message
+    client->text("Hello from Vibin"); // Don't really need a hello message
   }
   else if (type == WS_EVT_DISCONNECT)
   {
@@ -142,11 +162,11 @@ void displayText(String text){
   }
   else if (type == WS_EVT_DATA)
   {
-    //data packet
+    // data packet
     AwsFrameInfo *info = (AwsFrameInfo *)arg;
     if (info->final && info->index == 0 && info->len == len)
     {
-      //the whole message is in a single frame and we got all of it's data
+      // the whole message is in a single frame and we got all of it's data
       os_printf("ws[%s][%u] %s-message[%llu]: ", server->url(), client->id(), (info->opcode == WS_TEXT) ? "text" : "binary", info->len);
       if (info->opcode == WS_TEXT)
       {
@@ -175,15 +195,16 @@ void displayText(String text){
         {
           // Serial.print(data)
           const char *TYPE = doc["TYPE"];
-          if(strcmp(TYPE, "newPatron") == 0){
+          if (strcmp(TYPE, "newPatron") == 0)
+          {
             Serial.println("New Patron");
             String name = doc["NAME"];
             String drink = doc["DRINK"];
             String cup = doc["CUP"];
-            //concatenate the name and drink
+            // concatenate the name and drink
             String patron = name + " - " + drink + " - " + cup;
             // Serial.println(patron);
-           
+
             // display.clearDisplay();
             // display.setTextSize(1);             // Normal 1:1 pixel scale
 
@@ -199,50 +220,95 @@ void displayText(String text){
             // display.println(cupString.c_str());
             // display.display();      // Show text
 
-
             displayText(patron);
+            buzzerNotification();
 
-          ws.textAll("{\"TYPE\": \"cupMessage\", \"CUP\": \"" + cup + "\"}");
+            ws.textAll("{\"TYPE\": \"cupMessage\", \"CUP\": \"" + cup + "\"}");
           }
-          else if(strcmp(TYPE, "newDrink") == 0){
+          else if (strcmp(TYPE, "newDrink") == 0)
+          {
             Serial.println("New Drink");
             String name = doc["NAME"];
             String drink = doc["DRINK"];
             String cup = doc["CUP"];
-            //concatenate the name and drink
+            // concatenate the name and drink
             String patron = name + " - " + drink + " - " + cup;
             // Serial.
           }
-          else if(strcmp(TYPE, "percentage") == 0){
+          else if (strcmp(TYPE, "percentage") == 0)
+          {
             // Serial.println("Percentage");
             String name = doc["NAME"];
             String cup = doc["CUP"];
-            String percentage = doc["PERCENTAGE"];
-             DynamicJsonDocument old(64);  
-          String state = "";
-              old["TYPE"] = "percentage";
-          old["CUP"] = cup;
-          old["PERCENTAGE"] = doc["PERCENTAGE"];;
-          state = "";
-          serializeJson(old, state);
-          ws.textAll(state);
-          }
-          
-          else if(strcmp(TYPE, "cupUpdate") == 0){
-            
-          DynamicJsonDocument old(64);  
-          String state = "";
-              old["TYPE"] = "cupUpdate";
-          old["CUP"] = doc["CUP"];
-          old["ANALOG"] = doc["ANALOG"];
-          state = "";
-          serializeJson(old, state);
-          ws.textAll(state);
-
+            int percentage = doc["PERCENTAGE"];
+            if (strcmp(cup.c_str(), "A") == 0)
+            {
+              A_Percentage = percentage;
+            }
+            else
+            {
+              B_Percentage = percentage;
+            }
+            DynamicJsonDocument old(64);
+            String state = "";
+            old["TYPE"] = "percentage";
+            old["CUP"] = cup;
+            old["PERCENTAGE"] = doc["PERCENTAGE"];
+            ;
+            state = "";
+            serializeJson(old, state);
+            ws.textAll(state);
           }
 
+          else if (strcmp(TYPE, "cupUpdate") == 0)
+          {
 
-          client->text("{\"status\": true, \"TYPE\":\"status\"}"); //needs to have some kind fo check /timer that if you don't get a command from (ping pong) to auto turn off
+            DynamicJsonDocument old(64);
+            String state = "";
+            old["TYPE"] = "cupUpdate";
+            old["CUP"] = doc["CUP"];
+            old["ANALOG"] = doc["ANALOG"];
+            state = "";
+            serializeJson(old, state);
+            ws.textAll(state);
+          }
+          else if (strcmp(TYPE, "request") == 0)
+          {
+
+            DynamicJsonDocument old(64);
+            String state = "";
+            old["TYPE"] = "request";
+            old["CUP"] = doc["CUP"];
+            state = "";
+            serializeJson(old, state);
+            ws.textAll(state);
+            String cup = doc["CUP"];
+            displayText("Cup " + cup + " requested assistance.");
+            buzzerNotification();
+
+            // concatenate the name and cup
+          }
+          else if (strcmp(TYPE, "refill") == 0)
+          {
+            String name = doc["NAME"];
+            String cup = doc["CUP"];
+            String drink = doc["DRINK"];
+            displayText(name + " needs " + drink + " for cup " + cup);
+            buzzerNotification();
+          }
+          else if (strcmp(TYPE, "calibrate") == 0)
+          {
+
+            DynamicJsonDocument old(64);
+            String state = "";
+            old["TYPE"] = "calibrate";
+            old["CUP"] = doc["CUP"];
+            state = "";
+            serializeJson(old, state);
+            ws.textAll(state);
+          }
+
+          client->text("{\"status\": true, \"TYPE\":\"status\"}"); // needs to have some kind fo check /timer that if you don't get a command from (ping pong) to auto turn off
         }
       }
       else
@@ -250,7 +316,7 @@ void displayText(String text){
     }
     else
     {
-      //message is comprised of multiple frames or the frame is split into multiple packets
+      // message is comprised of multiple frames or the frame is split into multiple packets
       if (info->index == 0)
       {
         if (info->num == 0)
@@ -287,20 +353,33 @@ void displayText(String text){
       }
     }
   }
-  //Handle JSON stuff here
+  // Handle JSON stuff here
 }
 
+void statusScreen()
+{
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setCursor(0, 0);
+  display.println("  A    B  ");
+  display.setTextSize(1);
 
+  display.print("    " + String(A_Percentage) + "%" + "       " + String(B_Percentage) + "%");
+  display.display();
+}
 
-
-void setup() {
+void setup()
+{
   Serial.begin(115200);
   // Serial.setDebugOutput(true);
+  pinMode(BUZZER, OUTPUT);
 
   // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
-  if(!display.begin(SSD1306_SWITCHCAPVCC)) {
+  if (!display.begin(SSD1306_SWITCHCAPVCC))
+  {
     Serial.println(F("SSD1306 allocation failed"));
-    for(;;); // Don't proceed, loop forever
+    for (;;)
+      ; // Don't proceed, loop forever
   }
 
   // Show initial display buffer contents on the screen --
@@ -320,47 +399,51 @@ void setup() {
   delay(2000);
   displayText("Attempting to connect to WiFi");
 
+  statusScreen();
+  buzzerNotification();
 
-  WiFi.begin(ssid, password);             // Connect to the network
-    int i = 0;
-  while (WiFi.status() != WL_CONNECTED) { // Wait for the Wi-Fi to connect
+  WiFi.begin(ssid, password); // Connect to the network
+  int i = 0;
+  while (WiFi.status() != WL_CONNECTED)
+  { // Wait for the Wi-Fi to connect
     delay(1000);
     yield();
     // Serial.println(++i);
     // Serial.println(WiFi.status());
     //  Serial.println(' ');
     Serial.println(".");
-
   }
-    Serial.println('\n');
-  Serial.println("Connection established!");  
+  Serial.println('\n');
+  Serial.println("Connection established!");
   Serial.print("IP address:\t");
-  Serial.println(WiFi.localIP());    
+  Serial.println(WiFi.localIP());
   // display.display() is NOT necessary after every single drawing command,
   // unless that's what you want...rather, you can batch up a bunch of
   // drawing operations and then update the screen all at once by calling
   // display.display(). These examples demonstrate both approaches...
   displayText("Connected to WiFi      " + WiFi.localIP().toString());
   ws.onEvent(onWsEvent);
-httpServer.addHandler(&ws);
+  httpServer.addHandler(&ws);
 
-    httpServer.begin();
+  httpServer.begin();
   // testdrawchar();      // Draw characters of the default font
-  
+
   // testdrawstyles();    // Draw 'stylized' characters
 
   // testscrolltext();    // Draw scrolling text
-
-
 
   // Invert and restore display, pausing in-between
   display.invertDisplay(true);
   delay(1000);
   display.invertDisplay(false);
   delay(1000);
-
-
 }
 
-void loop() {
+void loop()
+{
+  if (statusDisplay && millis() - statusTime > 15000)
+  {
+    statusScreen();
+    statusDisplay = false;
+  }
 }
