@@ -1,13 +1,15 @@
-let socket = new WebSocket("wss://javascript.info/article/websocket/demo/hello");
+let socket = new WebSocket("ws://169.254.132.149/ws");
 
 socket.onopen = function(e) {
-  alert("[open] Connection established");
-  alert("Sending to server");
-  socket.send("My name is John");
+ console.log("hello world")
+//  socket.send("hello world?")
 };
 
 socket.onmessage = function(event) {
-  alert(`[message] Data received from server: ${event.data}`);
+ // alert(`[message] Data received from server: ${event.data}`);
+ console.log(event)
+ let message = event.data;
+ console.log(message)
 };
 
 socket.onclose = function(event) {
@@ -22,4 +24,17 @@ socket.onclose = function(event) {
 
 socket.onerror = function(error) {
   alert(`[error] ${error.message}`);
+
+
 };
+function newPatron(name, drink)
+{
+    let payload = {NAME:name, DRINK:drink, TYPE:"newPatron"}
+    
+    socket.send(JSON.stringify(payload))
+
+}
+// function test(name,drink)
+// {
+//     console.log(name,drink)
+// }

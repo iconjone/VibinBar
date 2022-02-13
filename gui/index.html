@@ -1,8 +1,7 @@
 <html>
 <head>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/dark.css">
-    <script src="swipe.js"></script>
-    <script src="server.js"></script>
+
 </head>
 <body>
     <h1>
@@ -18,6 +17,7 @@
 <div id="drinkMenu" style="display:none">
     <label for="DrinkSelect">What would you like to drink?</label>
   <select name="Drinks" id="Drinks">
+    <option value="" disabled selected>Select your option</option>
     <option value="Cocktail">Cocktail</option>
     <option value="Wine">Wine</option>
     <option value="Beer">Beer</option>
@@ -25,4 +25,6 @@
   </select>
 </div>
 </body>
+<script src="swipe.js"></script>
+<script src="server.js"></script>
 </html>

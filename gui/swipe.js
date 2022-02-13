@@ -1,6 +1,8 @@
 document.addEventListener('keydown', registerKeyStrokes)
 
 let buffer = []
+let sendName = ""
+let sendDrink = ""
 function  registerKeyStrokes(event) {
           // const charList = 'abcdefghijklmnopqrstuvwxyz0123456789';
           const key = event.key.toLowerCase()
@@ -38,6 +40,7 @@ function  registerKeyStrokes(event) {
              nameWork = (nameWork.split("$"))
              username[0] = capitalizeFirstLetter(nameWork[0])
              username[1] = capitalizeFirstLetter(nameWork[1])
+             sendName = username[1]+" "+username[0]
 
              document.getElementById("nameMessage").innerText = "Hey " + username[1] + " "+  username[0] +"!"
              console.log(DataArr[3])
@@ -87,7 +90,13 @@ function  registerKeyStrokes(event) {
             return date
         }
 
-    
+    document.getElementById("Drinks").onchange=function(){
+
+        sendDrink = document.getElementById("Drinks").value
+        newPatron(sendName,sendDrink)
+
+
+    }
 
 
 
