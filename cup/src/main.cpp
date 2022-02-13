@@ -5,7 +5,7 @@
 #include <ArduinoJson.h>
 #include <OneButton.h>
 #include <ArduinoWebsockets.h>
-// #include <Schedule.h>
+#include <Schedule.h>
 // #include <WiFiUdp.h>
 // #include <ArduinoOTA.h>
 // #include <ESP8266mDNS.h>
@@ -19,13 +19,28 @@ int GREEN_LED = D7;
 int BLUE_LED = D6;  
 const char* ssid     = "VibinBar";         // The SSID (name) of the Wi-Fi network you want to connect to
 const char* password = "vibinbar";         // The password of the Wi-Fi network
+int led = 0;
 String cup = "B";
 
-void lightControl(int hex)
+std::function<void(void)> lightControl(int hex)
 {
   analogWrite(RED_LED, (hex >> 16) * 4);
   analogWrite(GREEN_LED, ((hex >> 8) & 0xFF) * 4);
   analogWrite(BLUE_LED, (hex & 0xFF) * 4);
+  return 0;
+}
+
+std::function<void(void)> blinkLight(int hex)
+{
+  lightControl(hex);
+  delay(500);
+  lightControl(0x0);
+  delay(500);
+  lightControl(hex);
+  delay(500);
+  lightControl(0x0);
+  //delay(500);
+  return 0;
 }
 
 const char* websockets_server = "ws://192.168.137.30:80/ws"; //server adress and port
@@ -51,7 +66,23 @@ void onMessageCallback(WebsocketsMessage message) {
         //check if CUP is equal to cup
         if (strcmp(CUP, cup.c_str()) == 0) {
            Serial.println("Light up this cup");
-           lightControl(0x00FF00);
+            blinkLight(0x00FF00);
+        }
+    }
+        else if (strcmp(TYPE, "percentage") == 0) {
+        const char* CUP = doc["CUP"];
+        //check if CUP is equal to cup
+        if (strcmp(CUP, cup.c_str()) == 0) {
+          int percentage = doc["PERCENTAGE"];
+           Serial.println("Light up this cup");
+           int RED = (300 * (100 - percentage)) / 100 ;
+            int GREEN = (percentage * 255) / 100;
+            int BLUE = 0;
+            int value = (RED << 16) | (GREEN << 8) | BLUE;
+            if(value != led){
+              led = value;
+            lightControl(value);
+            }
         }
     }
 
@@ -85,11 +116,29 @@ IRAM_ATTR void checkTicks()
 
 
 
-
+bool singleClickBool = false;
+bool doubleClickBool = false;
 void singleClick()
 {
   //if error state - try recconecting to ssid <- (Might be able to just esp restart?)
   Serial.println("singleClick() detected.");
+
+  // lightControl(0xFF0000);
+  // schedule_function(lightControl(0x0000FF));
+  singleClickBool = true;
+
+
+
+} // singleClick
+
+void doubleClick()
+{
+  //if error state - try recconecting to ssid <- (Might be able to just esp restart?)
+  Serial.println("doubleClick() detected.");
+  // schedule_function(lightControl(0xFF00FF));
+    doubleClickBool = true;
+  
+
 
   // lightControl(0xFF0000);
 } // singleClick
@@ -118,39 +167,6 @@ OneButton btn2 = OneButton(
     true   // Enable internal pull-up resistor
 );
 
-unsigned long pressStartTime2;
-IRAM_ATTR void checkTicks2()
-{
-  // include all buttons here to be checked
-  btn2.tick(); // just call tick() to check the state.
-}
-
-
-void singleClick2()
-{
-  //if error state - try recconecting to ssid <- (Might be able to just esp restart?)
-  Serial.println("singleClick2() detected.");
-
-  // lightControl(0xFF0000);
-} // singleClick
-
-// this function will be called when the button was held down for 1 second or more.
-void pressStart2()
-{
-  Serial.println("pressStart2()");
-  pressStartTime2 = millis() - 1000; // as set in setPressTicks()
-
-} // pressStart()
-
-// this function will be called when the button was released after a long hold.
-void pressStop2()
-{
-  Serial.print("pressStop(");
-  Serial.print(millis() - pressStartTime2);
-  Serial.println(")2 detected.");
-
-
-} // pressStop()
 
 
 void setup() {
@@ -161,20 +177,15 @@ void setup() {
   delay(200);
   Serial.print("I'm Awake");
     attachInterrupt(digitalPinToInterrupt(BUTTON1), checkTicks, CHANGE);
-  btn.attachClick(singleClick);
-  // btn.attachDoubleClick(doubleClick);
-  // btn.attachMultiClick(multiClick);
-  btn.setPressTicks(1000); // that is the time when LongPressStart is called
+      btn.setPressTicks(1000); // that is the time when LongPressStart is called
   btn.attachLongPressStart(pressStart);
   btn.attachLongPressStop(pressStop);
-
-      attachInterrupt(digitalPinToInterrupt(BUTTON2), checkTicks2, CHANGE);
-  btn2.attachClick(singleClick2);
-  // btn.attachDoubleClick(doubleClick);
+  btn.attachClick(singleClick);
+  btn.attachDoubleClick(doubleClick);
   // btn.attachMultiClick(multiClick);
-  btn2.setPressTicks(1000); // that is the time when LongPressStart is called
-  btn2.attachLongPressStart(pressStart2);
-  btn2.attachLongPressStop(pressStop2);
+
+
+ 
 
 WiFi.begin(ssid, password);
 
@@ -217,7 +228,22 @@ client.poll();
     doc["ANALOG"] = analogValue;
     state = "";
     serializeJson(doc, state);
-    Serial.print("Sending: ");
-    Serial.println(state);
+    // Serial.print("Sending: ");
+    // Serial.println(state);
     client.send(state);
+
+    if(singleClickBool){
+      delay(100);
+      lightControl(0x0000FF);
+    client.send("{\"TYPE\":\"request\",\"CUP\":\"" + cup + "\"}");
+    singleClickBool = false;
+    }
+
+    if(doubleClickBool){
+      delay(100);
+      lightControl(0xFF00FF);
+
+    client.send("{\"TYPE\":\"calibrate\",\"CUP\":\"" + cup + "\"}");
+    doubleClickBool = false;
+    }
 }

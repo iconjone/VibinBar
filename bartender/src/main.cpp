@@ -213,8 +213,22 @@ void displayText(String text){
             String patron = name + " - " + drink + " - " + cup;
             // Serial.
           }
+          else if(strcmp(TYPE, "percentage") == 0){
+            // Serial.println("Percentage");
+            String name = doc["NAME"];
+            String cup = doc["CUP"];
+            String percentage = doc["PERCENTAGE"];
+             DynamicJsonDocument old(64);  
+          String state = "";
+              old["TYPE"] = "percentage";
+          old["CUP"] = cup;
+          old["PERCENTAGE"] = doc["PERCENTAGE"];;
+          state = "";
+          serializeJson(old, state);
+          ws.textAll(state);
+          }
           
-          if(strcmp(TYPE, "cupUpdate") == 0){
+          else if(strcmp(TYPE, "cupUpdate") == 0){
             
           DynamicJsonDocument old(64);  
           String state = "";
@@ -227,23 +241,6 @@ void displayText(String text){
 
           }
 
-          // if (strcmp(TYPE, "IL") == 0)
-          // {
-          //   LEDValue = doc["LED"];
-          //   IHValue = doc["IH"];
-          //   IHControl(IHValue);
-          //   lightControl(LEDValue);
-          // }
-          // else if (strcmp(TYPE, "I") == 0)
-          // {
-          //   IHValue = doc["IH"];
-          //   IHControl(IHValue);
-          // }
-          // else
-          // {
-          //   LEDValue = doc["LED"];
-          //   lightControl(LEDValue);
-          // }
 
           client->text("{\"status\": true, \"TYPE\":\"status\"}"); //needs to have some kind fo check /timer that if you don't get a command from (ping pong) to auto turn off
         }
