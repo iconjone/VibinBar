@@ -1,4 +1,6 @@
-let socket = new WebSocket("ws://169.254.132.149/ws");
+let socket = new WebSocket("ws://192.168.179.51/ws");
+
+let drinksData = {A:{name:"", drink:""}, B:{name:"", drink:""}}
 
 socket.onopen = function(e) {
  console.log("hello world")
@@ -30,6 +32,7 @@ socket.onerror = function(error) {
 function newPatron(name, drink)
 {
     let payload = {NAME:name, DRINK:drink, TYPE:"newPatron"}
+    
     
     socket.send(JSON.stringify(payload))
 

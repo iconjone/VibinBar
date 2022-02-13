@@ -69,8 +69,8 @@ function  registerKeyStrokes(event) {
             return string.charAt(0).toUpperCase() + string.slice(1);
           }  
         function isLegal(year,month,day){
-            year = 2022-year
-           let days = (year*365)+(month*30.4)+(day)
+            year = 2021-year
+           let days = (year*365)+((12-month)*30.4)+(30.4)+12+(30.4-day)+5
            if(days >= 7670)
            {
                console.log("You are of legal age")
