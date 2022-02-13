@@ -1,6 +1,7 @@
 let socket = new WebSocket("ws://192.168.179.51/ws");
 
 let drinksData = {A:{name:"", drink:""}, B:{name:"", drink:""}}
+let last = true;
 
 socket.onopen = function(e) {
  console.log("hello world")
@@ -31,9 +32,17 @@ socket.onerror = function(error) {
 };
 function newPatron(name, drink)
 {
-    let payload = {NAME:name, DRINK:drink, TYPE:"newPatron"}
     
-    
+    //if there is a drink, add it to the drinksData depending on if A or B is empty
+    let cup = last ? "A" : "B";
+    if(drinksData[cup].drink == ""){
+        drinksData[cup].name = name;
+        drinksData[cup].drink = drink;
+        last = !last;
+    }
+
+    let payload = {NAME:name, DRINK:drink, TYPE:"newPatron", CUP:cup};
+
     socket.send(JSON.stringify(payload))
 
 }

@@ -178,13 +178,29 @@ void displayText(String text){
             Serial.println("New Patron");
             String name = doc["NAME"];
             String drink = doc["DRINK"];
+            String cup = doc["CUP"];
             //concatenate the name and drink
             String patron = name + " - " + drink;
             Serial.println(patron);
            
+            display.clearDisplay();
+            display.setTextSize(1);             // Normal 1:1 pixel scale
+
+            display.setTextColor(SSD1306_WHITE);        // Draw white text
+
+            display.setCursor(0,0);             // Start at top-left corner
+
+            display.println(name.c_str());
+            display.setCursor(1,0);             // Start at mid-left corner
+            display.println(drink.c_str());
+            display.setCursor(2,0);             // Start at bottom-left corner
+            String cupString = "Cup: " + cup;
+            display.println(cupString.c_str());
 
 
-            displayText(patron);
+
+            // displayText(patron);
+
 
           }
           
