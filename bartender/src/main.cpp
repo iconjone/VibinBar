@@ -398,9 +398,12 @@ void setup()
   display.display();
   delay(2000);
   displayText("Attempting to connect to WiFi");
+IPAddress local_IP(192, 168, 137, 2);
+IPAddress gateway(192, 168, 137, 1);
+IPAddress subnet(255, 255, 255, 0);
 
-  statusScreen();
-  buzzerNotification();
+  WiFi.config(local_IP, gateway, subnet);
+
 
   WiFi.begin(ssid, password); // Connect to the network
   int i = 0;
@@ -437,6 +440,8 @@ void setup()
   delay(1000);
   display.invertDisplay(false);
   delay(1000);
+    statusScreen();
+  buzzerNotification();
 }
 
 void loop()
